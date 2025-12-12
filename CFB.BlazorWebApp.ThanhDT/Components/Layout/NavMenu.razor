@@ -3,7 +3,6 @@
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
 
-
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">CFB.BlazorWebApp.ThanhDT</a>
@@ -14,7 +13,6 @@
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
-
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
                 <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
@@ -44,12 +42,20 @@
         <AuthorizeView>
             <Authorized Context="authContext">
                 <div class="nav-item px-3 py-2 text-white-50">
-                    <small>Hello, @authContext.User.FindFirst("FullName")?.Value</small>
+                    <small>👤 Hello, @authContext.User.FindFirst("FullName")?.Value</small>
                 </div>
-
                 <div class="nav-item px-3">
-                    <button class="nav-link btn btn-link" @onclick="HandleLogout">
-                        <span class="bi bi-box-arrow-right-nav-menu" aria-hidden="true"></span> Logout
+                    <button class="nav-link btn btn-link" @onclick="HandleLogout" disabled="@isLoggingOut">
+                        @if (isLoggingOut)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                            <span>Logging out...</span>
+                        }
+                        else
+                        {
+                            <span class="bi bi-box-arrow-right-nav-menu" aria-hidden="true"></span>
+                            <span>Logout</span>
+                        }
                     </button>
                 </div>
             </Authorized>
@@ -65,17 +71,41 @@
 </div>
 
 @code {
+    private bool isLoggingOut = false;
+
     private async Task HandleLogout()
     {
-        Console.WriteLine("[DEBUG] Logout requested.");
+        if (isLoggingOut) return; // Prevent double-click
 
-        // 1. Gọi phương thức Logout từ dịch vụ (sẽ xóa session storage)
-        await AuthService.LogoutAsync();
+        isLoggingOut = true;
+        StateHasChanged();
 
-        // 2. Cập nhật Authentication State
-        if (AuthStateProvider is CFB.BlazorWebApp.ThanhDT.Services.CustomAuthenticationStateProvider customProvider)
+        try
         {
-            customProvider.NotifyAuthenticationStateChangedManually();
+            Console.WriteLine("[DEBUG] Logout requested.");
+
+            // 1. Gọi phương thức Logout từ dịch vụ (sẽ xóa session storage)
+            await AuthService.LogoutAsync();
+
+            // 2. Cập nhật Authentication State
+            if (AuthStateProvider is CFB.BlazorWebApp.ThanhDT.Services.CustomAuthenticationStateProvider customProvider)
+            {
+                customProvider.NotifyAuthenticationStateChangedManually();
+            }
+
+            // 3. Đợi một chút để state được cập nhật
+            await Task.Delay(100);
+
+            // 4. QUAN TRỌNG: Redirect về trang login
+            Navigation.NavigateTo("/login", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] Logout failed: {ex.Message}");
+        }
+        finally
+        {
+            isLoggingOut = false;
         }
     }
 }

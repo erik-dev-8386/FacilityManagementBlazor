@@ -120,41 +120,66 @@
     private string errorMessage = string.Empty;
     private bool isInitialized = false;
     private bool isSessionChecked = false;
+    private bool hasRedirected = false;
+
     protected override async Task OnInitializedAsync()
     {
         // Đợi một chút để đảm bảo component đã render xong
         await Task.Delay(100);
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender && !isInitialized)
-        {
-            isInitialized = true;
+    // protected override async Task OnAfterRenderAsync(bool firstRender)
+    // {
+    //     if (firstRender && !isInitialized)
+    //     {
+    //         isInitialized = true;
             
-            try
-            {
-                // Load user từ sessionStorage
-                await AuthService.LoadUserFromSessionStorageAsync(isPrerendering: false);
+    //         try
+    //         {
+    //             Load user từ sessionStorage
+    //             await AuthService.LoadUserFromSessionStorageAsync(isPrerendering: false);
                 
-                // Nếu đã đăng nhập, chuyển hướng
-                if (AuthService.IsAuthenticated)
-                {
-                    Console.WriteLine("[DEBUG] User already logged in, redirecting...");
-                    Navigation.NavigateTo("/facilitythanhdts", false);
-                }
-                else
-                {
-                    Console.WriteLine("[DEBUG] No existing session found");
-                    StateHasChanged();
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[ERROR] OnAfterRenderAsync: {ex.Message}");
-            }
+    //             Nếu đã đăng nhập, chuyển hướng
+    //             if (AuthService.IsAuthenticated && !hasRedirected)
+    //             {
+    //                 hasRedirected = true;
+    //                 Console.WriteLine("[DEBUG] User already logged in, redirecting...");
+    //                 Navigation.NavigateTo("/facilitythanhdts", false);
+    //             }
+    //             else
+    //             {
+    //                 Console.WriteLine("[DEBUG] No existing session found");
+    //                 StateHasChanged();
+    //             }
+    //         }
+    //         catch (Exception ex)
+    //         {
+    //             Console.WriteLine($"[ERROR] OnAfterRenderAsync: {ex.Message}");
+    //         }
+    //     }
+    // }
+
+   protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+    if (firstRender && !isInitialized)
+    {
+        isInitialized = true;
+        
+        try
+        {
+            // CHỈ load user, KHÔNG redirect
+            await AuthService.LoadUserFromSessionStorageAsync(isPrerendering: false);
+            
+            Console.WriteLine($"[DEBUG] Login page loaded - IsAuthenticated: {AuthService.IsAuthenticated}");
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] OnAfterRenderAsync: {ex.Message}");
         }
     }
+}
 
     private async Task HandleLogin()
     {

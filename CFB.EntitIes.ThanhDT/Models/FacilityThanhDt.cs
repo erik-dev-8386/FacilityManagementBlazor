@@ -2,6 +2,7 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace CFB.Entities.ThanhDT.Models;
 
@@ -9,15 +10,24 @@ public partial class FacilityThanhDt
 {
     public int FacilityThanhDtid { get; set; }
 
+    [Required(ErrorMessage = "Facility name is required.")]
+    [StringLength(50, ErrorMessage = "Facility name must not exceed 50 characters.")]
     public string FacilityName { get; set; }
 
+    [Required(ErrorMessage = "Facility Type Name is required.")]
     public int FacilityTypeThanhDtid { get; set; }
+
+    [Required(ErrorMessage = "Campus Name is required.")]
 
     public int CampusThanhDtid { get; set; }
 
+    [Required(ErrorMessage = "Capacity is required.")]
+    [Range(1, 200, ErrorMessage = "Capacity must be between 1 and 200.")]
     public int Capacity { get; set; }
 
+    [StringLength(500, ErrorMessage = "Location detail must not exceed 500 characters.")]
     public string LocationDetail { get; set; }
+    [StringLength(2000, ErrorMessage = "Description must not exceed 2000 characters.")]
 
     public string Description { get; set; }
 

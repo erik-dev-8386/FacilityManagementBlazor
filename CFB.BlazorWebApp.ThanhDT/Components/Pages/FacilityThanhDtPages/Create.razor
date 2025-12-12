@@ -7,7 +7,7 @@
 @inject FacilityThanhDtService _facilityThanhDTService
 @inject FacilityTypeThanhDtService _facilityTypeThanhDtService
 @inject CampusThanhDtService _campusThanhDtService
-@attribute [Authorize]
+
 
 <PageTitle>Create Facility</PageTitle>
 
@@ -42,16 +42,13 @@
         }
 
     @@keyframes rotate {
-        0%
+        0% {
+            transform: rotate(0deg);
+        }
 
-    {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-
+        100% {
+            transform: rotate(360deg);
+        }
     }
 
     .page-header i {
@@ -325,22 +322,19 @@
     }
 
     @@media (max-width: 768px) {
-        .form-grid
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
 
-    {
-        grid-template-columns: 1fr;
-    }
+        .action-buttons {
+            flex-direction: column;
+            align-items: stretch;
+        }
 
-    .action-buttons {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .btn-create, .btn-cancel {
-        justify-content: center;
-        width: 100%;
-    }
-
+        .btn-create, .btn-cancel {
+            justify-content: center;
+            width: 100%;
+        }
     }
 </style>
 
@@ -507,6 +501,28 @@
         FacilityTypeThanhDts = await _facilityTypeThanhDtService.GetAllAsync();
         CampusThanhDts = await _campusThanhDtService.GetAllAsync();
 
+        if (FacilityTypeThanhDts != null && FacilityTypeThanhDts.Any())
+        {
+            if (FacilityThanhDt.FacilityTypeThanhDtid == 0)
+            {
+                FacilityThanhDt.FacilityTypeThanhDtid = FacilityTypeThanhDts.First().FacilityTypeThanhDtid;
+            }
+        }
+
+        if (CampusThanhDts != null && CampusThanhDts.Any())
+        {
+            if (FacilityThanhDt.CampusThanhDtid == 0)
+            {
+                FacilityThanhDt.CampusThanhDtid = CampusThanhDts.First().CampusThanhDtid;
+            }
+        }
+
+        if (FacilityThanhDt.CreatedAt == default)
+        {
+            FacilityThanhDt.CreatedAt = DateTime.Now;
+        }
+
+
         if ((FacilityTypeThanhDts is null || !FacilityTypeThanhDts.Any()) &&
         (CampusThanhDts is null || !CampusThanhDts.Any()))
         {
@@ -516,7 +532,14 @@
 
     private async Task AddFacilityThanhDt()
     {
-        _facilityThanhDTService?.CreateAsync(FacilityThanhDt);
-        NavigationManager.NavigateTo("/facilitythanhdts");
+        try
+        {
+            await _facilityThanhDTService.CreateAsync(FacilityThanhDt);
+            NavigationManager.NavigateTo("/facilitythanhdts", false);
+        }
+        catch(Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
     }
 }
