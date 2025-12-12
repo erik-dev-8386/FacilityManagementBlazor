@@ -1,0 +1,514 @@
+﻿@page "/facilitythanhdts/edit"
+@using CFB.Services.ThanhDT
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using CFB.Entities.ThanhDT.Models
+@inject NavigationManager NavigationManager
+@inject FacilityThanhDtService _facilityThanhDTService
+@inject FacilityTypeThanhDtService _facilityTypeThanhDtService
+@inject CampusThanhDtService _campusThanhDtService
+@attribute [Authorize]
+
+<PageTitle>Edit Facility</PageTitle>
+
+<style>
+    .edit-container {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 40px 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(240, 147, 251, 0.3);
+        margin-bottom: 30px;
+        text-align: center;
+    }
+
+        .page-header i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .page-header h1 {
+            margin: 15px 0 10px;
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        .page-header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+    .form-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        padding: 35px;
+        margin-bottom: 25px;
+    }
+
+    .form-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 3px solid #f093fb;
+    }
+
+        .form-header i {
+            color: #f093fb;
+            font-size: 1.8rem;
+        }
+
+        .form-header h2 {
+            margin: 0;
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #212529;
+        }
+
+    .loading-container {
+        text-align: center;
+        padding: 80px 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    }
+
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #f093fb;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+
+    @@keyframes spin {
+        0%
+
+    {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 0;
+    }
+
+        .form-group.full-width {
+            grid-column: 1/-1;
+        }
+
+    .form-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+    }
+
+        .form-label i {
+            color: #f093fb;
+            font-size: 1.1rem;
+        }
+
+        .form-label .required {
+            color: #dc3545;
+            margin-left: 2px;
+        }
+
+    .form-control, .form-select {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s;
+        background: #f8f9fa;
+    }
+
+        .form-control:focus, .form-select:focus {
+            outline: none;
+            border-color: #f093fb;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(240, 147, 251, 0.1);
+        }
+
+        .form-control:hover, .form-select:hover {
+            border-color: #f5576c;
+        }
+
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s;
+    }
+
+        .form-check:hover {
+            background: #e9ecef;
+            border-color: #f093fb;
+        }
+
+    .form-check-input {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        border: 2px solid #f093fb;
+    }
+
+        .form-check-input:checked {
+            background-color: #f093fb;
+            border-color: #f093fb;
+        }
+
+    .form-check-label {
+        cursor: pointer;
+        font-weight: 600;
+        color: #495057;
+        margin: 0;
+    }
+
+    .validation-message {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+        .validation-message::before {
+            content: '⚠';
+        }
+
+    .validation-summary {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+    }
+
+        .validation-summary ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #856404;
+        }
+
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        padding-top: 25px;
+        border-top: 2px solid #e9ecef;
+        margin-top: 25px;
+        flex-wrap: wrap;
+    }
+
+    .btn-save {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 14px 35px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.05rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 10px rgba(240, 147, 251, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(240, 147, 251, 0.4);
+        }
+
+        .btn-save:active {
+            transform: translateY(0);
+        }
+
+    .btn-cancel {
+        color: #6c757d;
+        text-decoration: none;
+        padding: 14px 30px;
+        border: 2px solid #6c757d;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-cancel:hover {
+            background: #6c757d;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .info-box {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border-left: 4px solid #2196f3;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+        .info-box i {
+            color: #2196f3;
+            font-size: 1.5rem;
+        }
+
+        .info-box p {
+            margin: 0;
+            color: #0d47a1;
+            font-size: 0.95rem;
+        }
+
+    .form-divider {
+        grid-column: 1/-1;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #f093fb, transparent);
+        margin: 10px 0;
+    }
+
+    @@media (max-width: 768px) {
+        .form-grid
+
+    {
+        grid-template-columns: 1fr;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn-save, .btn-cancel {
+        justify-content: center;
+        width: 100%;
+    }
+
+    }
+</style>
+
+<div class="edit-container">
+    <div class="page-header">
+        <i class="bi bi-pencil-square"></i>
+        <h1>Edit Facility</h1>
+        <p>Update facility information</p>
+    </div>
+
+    @if (FacilityThanhDt is null)
+    {
+        <div class="loading-container">
+            <div class="spinner"></div>
+            <p style="color: #6c757d; font-size: 1.1rem;">Loading facility data...</p>
+        </div>
+    }
+    else
+    {
+        <div class="form-card">
+            <div class="form-header">
+                <i class="bi bi-building-fill-gear"></i>
+                <h2>Facility Information</h2>
+            </div>
+
+            <div class="info-box">
+                <i class="bi bi-info-circle-fill"></i>
+                <p>Please fill in all required fields marked with <strong style="color: #dc3545;">*</strong> to update the facility</p>
+            </div>
+
+            <EditForm method="post" Model="FacilityThanhDt" OnValidSubmit="UpdateFacilityThanhDt" FormName="edit" Enhance>
+                <DataAnnotationsValidator />
+                <ValidationSummary role="alert" class="validation-summary" />
+
+                <input type="hidden" name="FacilityThanhDt.FacilityThanhDtid" value="@FacilityThanhDt.FacilityThanhDtid" />
+
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label for="facilityname" class="form-label">
+                            <i class="bi bi-tag-fill"></i>
+                            Facility Name
+                            <span class="required">*</span>
+                        </label>
+                        <InputText id="facilityname" @bind-Value="FacilityThanhDt.FacilityName" class="form-control" placeholder="Enter facility name" />
+                        <ValidationMessage For="() => FacilityThanhDt.FacilityName" class="validation-message" />
+                    </div>
+
+                    <div class="form-divider"></div>
+
+                    <div class="form-group">
+                        <label for="facilitytypethanhdtid" class="form-label">
+                            <i class="bi bi-diagram-3-fill"></i>
+                            Facility Type
+                            <span class="required">*</span>
+                        </label>
+                        <InputSelect id="facilitytypethanhdtid" @bind-Value="FacilityThanhDt.FacilityTypeThanhDtid" class="form-control">
+                            @foreach (var item in FacilityTypeThanhDts)
+                            {
+                                <option value="@item.FacilityTypeThanhDtid">@string.Format("{0} - {1}", item.FacilityTypeThanhDtid, item.TypeName)</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="() => FacilityThanhDt.FacilityTypeThanhDtid" class="validation-message" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="campusthanhdtid" class="form-label">
+                            <i class="bi bi-geo-alt-fill"></i>
+                            Campus
+                            <span class="required">*</span>
+                        </label>
+                        <InputSelect id="campusthanhdtid" @bind-Value="FacilityThanhDt.CampusThanhDtid" class="form-control">
+                            @foreach (var item in CampusThanhDts)
+                            {
+                                <option value="@item.CampusThanhDtid">@string.Format("{0} - {1}", item.CampusThanhDtid, item.Name)</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="() => FacilityThanhDt.CampusThanhDtid" class="validation-message" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="capacity" class="form-label">
+                            <i class="bi bi-people-fill"></i>
+                            Capacity
+                            <span class="required">*</span>
+                        </label>
+                        <InputNumber id="capacity" @bind-Value="FacilityThanhDt.Capacity" class="form-control" placeholder="Enter capacity" />
+                        <ValidationMessage For="() => FacilityThanhDt.Capacity" class="validation-message" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="locationdetail" class="form-label">
+                            <i class="bi bi-pin-map-fill"></i>
+                            Location Detail
+                        </label>
+                        <InputText id="locationdetail" @bind-Value="FacilityThanhDt.LocationDetail" class="form-control" placeholder="Enter location details" />
+                        <ValidationMessage For="() => FacilityThanhDt.LocationDetail" class="validation-message" />
+                    </div>
+
+                    <div class="form-divider"></div>
+
+                    <div class="form-group full-width">
+                        <label for="description" class="form-label">
+                            <i class="bi bi-file-text-fill"></i>
+                            Description
+                        </label>
+                        <InputText id="description" @bind-Value="FacilityThanhDt.Description" class="form-control" placeholder="Enter description" />
+                        <ValidationMessage For="() => FacilityThanhDt.Description" class="validation-message" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-check-circle-fill"></i>
+                            Availability Status
+                        </label>
+                        <div class="form-check">
+                            <InputCheckbox id="isavailable" @bind-Value="FacilityThanhDt.IsAvailable" class="form-check-input" />
+                            <label for="isavailable" class="form-check-label">
+                                Is Available for Booking
+                            </label>
+                        </div>
+                        <ValidationMessage For="() => FacilityThanhDt.IsAvailable" class="validation-message" />
+                    </div>
+
+                    <div class="form-divider"></div>
+
+                    <div class="form-group">
+                        <label for="createdat" class="form-label">
+                            <i class="bi bi-calendar-plus-fill"></i>
+                            Created At
+                        </label>
+                        <InputDate id="createdat" @bind-Value="FacilityThanhDt.CreatedAt" class="form-control" />
+                        <ValidationMessage For="() => FacilityThanhDt.CreatedAt" class="validation-message" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="updatedat" class="form-label">
+                            <i class="bi bi-calendar-check-fill"></i>
+                            Updated At
+                        </label>
+                        <InputDate id="updatedat" @bind-Value="FacilityThanhDt.UpdatedAt" class="form-control" />
+                        <ValidationMessage For="() => FacilityThanhDt.UpdatedAt" class="validation-message" />
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button type="submit" class="btn-save">
+                        <i class="bi bi-check-circle-fill"></i>
+                        Save Changes
+                    </button>
+                    <a href="/facilitythanhdts" class="btn-cancel">
+                        <i class="bi bi-x-circle"></i>
+                        Cancel
+                    </a>
+                </div>
+            </EditForm>
+        </div>
+    }
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    private int FacilityThanhDtid { get; set; }
+
+    [SupplyParameterFromForm]
+    private FacilityThanhDt? FacilityThanhDt { get; set; }
+    private List<FacilityTypeThanhDt> FacilityTypeThanhDts { get; set; } = new();
+    private List<CampusThanhDt> CampusThanhDts { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        FacilityThanhDt ??= await _facilityThanhDTService.GetByIdAsync(FacilityThanhDtid);
+        FacilityTypeThanhDts = await _facilityTypeThanhDtService.GetAllAsync();
+        CampusThanhDts = await _campusThanhDtService.GetAllAsync();
+
+        if ((FacilityTypeThanhDts is null || !FacilityTypeThanhDts.Any()) &&
+        (CampusThanhDts is null || !CampusThanhDts.Any()) || FacilityThanhDt is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+
+    private async Task UpdateFacilityThanhDt()
+    {
+        var result = await _facilityThanhDTService.UpdateAsync(FacilityThanhDt!);
+        if (result > 0)
+        {
+            NavigationManager.NavigateTo("/facilitythanhdts", true);
+        }
+    }
+}

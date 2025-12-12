@@ -1,0 +1,430 @@
+﻿@page "/facilitythanhdts/details"
+@using CFB.Services.ThanhDT
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using CFB.Entities.ThanhDT.Models
+@inject NavigationManager NavigationManager
+@inject FacilityThanhDtService _facilityThanhDTService
+@attribute [Authorize]
+
+<PageTitle>Facility Details</PageTitle>
+
+<style>
+    .details-container {
+        max-width: 1000px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+        margin-bottom: 30px;
+        text-align: center;
+    }
+
+        .page-header i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .page-header h1 {
+            margin: 15px 0 10px;
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        .page-header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+    .details-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        padding: 35px;
+        margin-bottom: 25px;
+    }
+
+    .card-header-section {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 3px solid #667eea;
+    }
+
+        .card-header-section i {
+            color: #667eea;
+            font-size: 1.8rem;
+        }
+
+        .card-header-section h2 {
+            margin: 0;
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #212529;
+        }
+
+    .loading-container {
+        text-align: center;
+        padding: 80px 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    }
+
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+
+    @@keyframes spin {
+        0%
+
+    {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+
+    }
+
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 25px;
+    }
+
+    .detail-box {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 4px solid #667eea;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .detail-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 50%;
+            transform: translate(30%, -30%);
+        }
+
+        .detail-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+            border-left-color: #764ba2;
+        }
+
+    .detail-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #6c757d;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        position: relative;
+        z-index: 1;
+    }
+
+        .detail-label i {
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+    .detail-value {
+        color: #212529;
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin: 0;
+        word-break: break-word;
+        position: relative;
+        z-index: 1;
+    }
+
+    .description-box {
+        grid-column: 1/-1;
+        background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+        padding: 25px;
+        border-radius: 10px;
+        border: 2px dashed #667eea;
+    }
+
+        .description-box .detail-label {
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+        }
+
+        .description-box .detail-value {
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.6;
+            color: #495057;
+        }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 18px;
+        border-radius: 25px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .status-available {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+
+    .status-unavailable {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+    }
+
+    .status-badge i {
+        font-size: 1.1rem;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        padding-top: 25px;
+        border-top: 2px solid #e9ecef;
+        flex-wrap: wrap;
+    }
+
+    .btn-edit {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+        box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+    }
+
+        .btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+    .btn-back {
+        color: #6c757d;
+        text-decoration: none;
+        padding: 12px 25px;
+        border: 2px solid #6c757d;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-back:hover {
+            background: #6c757d;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .info-badge {
+        display: inline-block;
+        background: #e7f3ff;
+        color: #0066cc;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-left: 10px;
+    }
+
+    @@media (max-width: 768px) {
+        .details-grid
+
+    {
+        grid-template-columns: 1fr;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn-edit, .btn-back {
+        justify-content: center;
+        width: 100%;
+    }
+
+    }
+</style>
+
+<div class="details-container">
+    <div class="page-header">
+        <i class="bi bi-info-circle-fill"></i>
+        <h1>Facility Details</h1>
+        <p>Comprehensive information about the facility</p>
+    </div>
+
+    @if (facilitythanhdt is null)
+    {
+        <div class="loading-container">
+            <div class="spinner"></div>
+            <p style="color: #6c757d; font-size: 1.1rem;">Loading facility information...</p>
+        </div>
+    }
+    else
+    {
+        <div class="details-card">
+            <div class="card-header-section">
+                <i class="bi bi-building-fill"></i>
+                <h2>@facilitythanhdt.FacilityName</h2>
+                <span class="status-badge @(facilitythanhdt.IsAvailable ? "status-available" : "status-unavailable")">
+                    <i class="bi @(facilitythanhdt.IsAvailable ? "bi-check-circle-fill" : "bi-x-circle-fill")"></i>
+                    @(facilitythanhdt.IsAvailable ? "Available" : "Unavailable")
+                </span>
+            </div>
+
+            <div class="details-grid">
+                <div class="detail-box">
+                    <div class="detail-label">
+                        <i class="bi bi-tag-fill"></i>
+                        Facility Name
+                    </div>
+                    <p class="detail-value">@facilitythanhdt.FacilityName</p>
+                </div>
+
+                <div class="detail-box">
+                    <div class="detail-label">
+                        <i class="bi bi-diagram-3-fill"></i>
+                        Facility Type
+                    </div>
+                    <p class="detail-value">@facilitythanhdt.FacilityTypeThanhDt.TypeName</p>
+                </div>
+
+                <div class="detail-box">
+                    <div class="detail-label">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        Campus
+                    </div>
+                    <p class="detail-value">@facilitythanhdt.CampusThanhDt.Name</p>
+                </div>
+
+                <div class="detail-box">
+                    <div class="detail-label">
+                        <i class="bi bi-people-fill"></i>
+                        Capacity
+                    </div>
+                    <p class="detail-value">@facilitythanhdt.Capacity <span style="font-size: 0.9rem; color: #6c757d;">people</span></p>
+                </div>
+
+                <div class="detail-box">
+                    <div class="detail-label">
+                        <i class="bi bi-pin-map-fill"></i>
+                        Location Detail
+                    </div>
+                    <p class="detail-value">@(string.IsNullOrEmpty(facilitythanhdt.LocationDetail) ? "Not specified" : facilitythanhdt.LocationDetail)</p>
+                </div>
+
+                <div class="detail-box">
+                    <div class="detail-label">
+                        <i class="bi bi-calendar-plus-fill"></i>
+                        Created At
+                    </div>
+                    <p class="detail-value">@facilitythanhdt.CreatedAt<br /><span style="font-size: 0.9rem; color: #6c757d;">@facilitythanhdt.CreatedAt</span></p>
+                </div>
+
+                <div class="detail-box">
+                    <div class="detail-label">
+                        <i class="bi bi-calendar-check-fill"></i>
+                        Updated At
+                    </div>
+                    <p class="detail-value">
+                        @if (facilitythanhdt.UpdatedAt.HasValue)
+                        {
+                            @facilitythanhdt.UpdatedAt.Value.ToString("dd/MM/yyyy")
+                            <br />
+                            <span style="font-size: 0.9rem; color: #6c757d;">@facilitythanhdt.UpdatedAt.Value.ToString("HH:mm:ss")</span>
+                        }
+                        else
+                        {
+                            <span style="color: #6c757d;">Not updated yet</span>
+                        }
+                    </p>
+                </div>
+
+                @if (!string.IsNullOrEmpty(facilitythanhdt.Description))
+                {
+                    <div class="description-box">
+                        <div class="detail-label">
+                            <i class="bi bi-file-text-fill"></i>
+                            Description
+                        </div>
+                        <p class="detail-value">@facilitythanhdt.Description</p>
+                    </div>
+                }
+            </div>
+
+            <div class="action-buttons">
+                <a href="@($"/facilitythanhdts/edit?facilitythanhdtid={facilitythanhdt.FacilityThanhDtid}")" class="btn-edit">
+                    <i class="bi bi-pencil-square"></i>
+                    Edit Facility
+                </a>
+                <a href="/facilitythanhdts" class="btn-back">
+                    <i class="bi bi-arrow-left"></i>
+                    Back to List
+                </a>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private FacilityThanhDt? facilitythanhdt;
+
+    [SupplyParameterFromQuery]
+    private int FacilityThanhDtid { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        facilitythanhdt = await _facilityThanhDTService.GetByIdAsync(FacilityThanhDtid);
+
+        if (facilitythanhdt is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+}

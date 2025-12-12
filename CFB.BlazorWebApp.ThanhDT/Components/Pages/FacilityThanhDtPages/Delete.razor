@@ -1,0 +1,392 @@
+﻿@page "/facilitythanhdts/delete"
+@using CFB.Services.ThanhDT
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using CFB.Entities.ThanhDT.Models
+@inject NavigationManager NavigationManager
+@inject FacilityThanhDtService _facilityThanhDTService
+@attribute [Authorize]
+
+<PageTitle>Delete Facility</PageTitle>
+
+<style>
+    .delete-container {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .warning-header {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        padding: 40px 30px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(220, 53, 69, 0.3);
+        margin-bottom: 30px;
+    }
+
+        .warning-header i {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+            animation: pulse 2s infinite;
+        }
+
+    @@keyframes pulse {
+        0%, 100%
+
+    {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+
+    }
+
+    .warning-header h1 {
+        margin: 15px 0 10px;
+        font-size: 2rem;
+        font-weight: 600;
+    }
+
+    .warning-header p {
+        margin: 0;
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+
+    .details-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        padding: 30px;
+        margin-bottom: 25px;
+    }
+
+    .alert-danger-custom {
+        background: #fff3cd;
+        border-left: 4px solid #dc3545;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+        .alert-danger-custom i {
+            color: #dc3545;
+            font-size: 1.5rem;
+        }
+
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+
+    .detail-item {
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        transition: transform 0.2s;
+    }
+
+        .detail-item:hover {
+            transform: translateY(-2px);
+            background: #e9ecef;
+        }
+
+    .detail-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #6c757d;
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+        .detail-label i {
+            color: #007bff;
+        }
+
+    .detail-value {
+        color: #212529;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+        word-break: break-word;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .status-available {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-unavailable {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .loading-container {
+        text-align: center;
+        padding: 80px 20px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    }
+
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #007bff;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+
+    @@keyframes spin {
+        0%
+
+    {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        padding-top: 20px;
+        border-top: 2px solid #e9ecef;
+    }
+
+    .btn-delete {
+        background: #dc3545;
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
+    }
+
+        .btn-delete:hover:not(:disabled) {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(220, 53, 69, 0.4);
+        }
+
+        .btn-delete:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+    .btn-back {
+        color: #6c757d;
+        text-decoration: none;
+        padding: 12px 25px;
+        border: 2px solid #6c757d;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-block;
+    }
+
+        .btn-back:hover {
+            background: #6c757d;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+        .section-title i {
+            color: #007bff;
+            font-size: 1.5rem;
+        }
+
+        .section-title h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #212529;
+        }
+</style>
+
+<div class="delete-container">
+    <div class="warning-header">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <h1>Delete Facility</h1>
+        <p>This action cannot be undone</p>
+    </div>
+
+    @if (facilitythanhdt is null)
+    {
+        <div class="loading-container">
+            <div class="spinner"></div>
+            <p style="color: #6c757d; font-size: 1.1rem;">Loading facility information...</p>
+        </div>
+    }
+    else
+    {
+        <div class="details-card">
+            <div class="section-title">
+                <i class="bi bi-building"></i>
+                <h2>Facility Details</h2>
+            </div>
+
+            <div class="alert-danger-custom">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <div>
+                    <strong>Warning:</strong> Are you sure you want to permanently delete this facility? This action cannot be undone.
+                </div>
+            </div>
+
+            <div class="details-grid">
+                <div class="detail-item">
+                    <div class="detail-label">
+                        <i class="bi bi-tag-fill"></i>
+                        Facility Name
+                    </div>
+                    <p class="detail-value">@facilitythanhdt.FacilityName</p>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">
+                        <i class="bi bi-diagram-3-fill"></i>
+                        Facility Type ID
+                    </div>
+                    <p class="detail-value">@facilitythanhdt.FacilityTypeThanhDtid</p>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        Campus ID
+                    </div>
+                    <p class="detail-value">@facilitythanhdt.CampusThanhDtid</p>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">
+                        <i class="bi bi-people-fill"></i>
+                        Capacity
+                    </div>
+                    <p class="detail-value">@facilitythanhdt.Capacity people</p>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">
+                        <i class="bi bi-pin-map-fill"></i>
+                        Location Detail
+                    </div>
+                    <p class="detail-value">@(string.IsNullOrEmpty(facilitythanhdt.LocationDetail) ? "N/A" : facilitythanhdt.LocationDetail)</p>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">
+                        <i class="bi bi-check-circle-fill"></i>
+                        Status
+                    </div>
+                    <p class="detail-value">
+                        <span class="status-badge @(facilitythanhdt.IsAvailable ? "status-available" : "status-unavailable")">
+                            @(facilitythanhdt.IsAvailable ? "Available" : "Unavailable")
+                        </span>
+                    </p>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">
+                        <i class="bi bi-calendar-plus"></i>
+                        Created At
+                    </div>
+                    <p class="detail-value">@facilitythanhdt.CreatedAt</p>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">
+                        <i class="bi bi-calendar-check"></i>
+                        Updated At
+                    </div>
+                    <p class="detail-value">@facilitythanhdt.UpdatedAt?.ToString("dd/MM/yyyy HH:mm")</p>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(facilitythanhdt.Description))
+            {
+                <div class="detail-item" style="grid-column: 1/-1;">
+                    <div class="detail-label">
+                        <i class="bi bi-file-text-fill"></i>
+                        Description
+                    </div>
+                    <p class="detail-value">@facilitythanhdt.Description</p>
+                </div>
+            }
+
+            <EditForm method="post" Model="facilitythanhdt" OnValidSubmit="DeleteFacilityThanhDt" FormName="delete" Enhance>
+                <div class="action-buttons">
+                    <button type="submit" class="btn-delete" disabled="@(facilitythanhdt is null)">
+                        <i class="bi bi-trash-fill"></i> Delete Facility
+                    </button>
+                    <a href="/facilitythanhdts" class="btn-back">
+                        <i class="bi bi-arrow-left"></i> Back to List
+                    </a>
+                </div>
+            </EditForm>
+        </div>
+    }
+</div>
+
+@code {
+    private FacilityThanhDt? facilitythanhdt;
+
+    [SupplyParameterFromQuery]
+    private int FacilityThanhDtid { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        facilitythanhdt = await _facilityThanhDTService.GetByIdAsync(FacilityThanhDtid);
+
+        if (facilitythanhdt is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+
+    private async Task DeleteFacilityThanhDt()
+    {
+        await _facilityThanhDTService.DeleteAsyc(facilitythanhdt!.FacilityThanhDtid);
+        NavigationManager.NavigateTo("/facilitythanhdts");
+    }
+}

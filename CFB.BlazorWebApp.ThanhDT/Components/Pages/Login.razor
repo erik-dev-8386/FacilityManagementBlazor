@@ -1,0 +1,216 @@
+﻿@page "/login"
+@using Microsoft.AspNetCore.Components.Authorization
+@inject CFB.BlazorWebApp.ThanhDT.Services.AuthenticationService AuthService
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+
+<PageTitle>Login - ECMS System</PageTitle>
+
+<div class="login-page d-flex align-items-center justify-content-center min-vh-100 bg-gradient-primary">
+    <div class="card shadow-lg border-0 rounded-4" style="width: 420px;">
+        <div class="card-body p-5">
+            <div class="text-center mb-4">
+                <div class="logo-circle mb-3">
+                    <i class="fas fa-bolt fa-2x text-white"></i>
+                </div>
+                <h3 class="fw-bold text-primary mb-1">Welcome to ECMS</h3>
+                <p class="text-muted">Electric Charging Management System</p>
+            </div>
+
+            <EditForm Model="@loginModel" OnValidSubmit="HandleLogin" FormName="loginForm">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="form-floating mb-3">
+                    <InputText id="username" class="form-control rounded-3" placeholder="Username" @bind-Value="loginModel.Username" />
+                    <label for="username"><i class="fas fa-user me-2"></i>Username</label>
+                </div>
+
+                <div class="form-floating mb-4 position-relative">
+                    <InputText id="password" type="@(showPassword ? "text" : "password")" class="form-control rounded-3 pe-5" placeholder="Password" @bind-Value="loginModel.Password" />
+                    <label for="password"><i class="fas fa-lock me-2"></i>Password</label>
+
+                    <button type="button" class="btn position-absolute top-50 end-0 translate-middle-y me-2 p-0 border-0 bg-transparent text-muted" @onclick="TogglePasswordVisibility">
+                        <i class="fas @(showPassword ? "fa-eye-slash" : "fa-eye")"></i>
+                    </button>
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger py-2 small text-center" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>@errorMessage
+                    </div>
+                }
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg rounded-3 shadow-sm" disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                            <span>Signing in...</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-sign-in-alt me-2"></i> <span>Sign in</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+
+            <div class="text-center mt-4">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Contact administrator for account access
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+    }
+
+    .logo-circle {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: #007bff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+    }
+
+    .card {
+        animation: fadeInUp 0.6s ease;
+    }
+
+    .form-floating > label {
+        color: #6c757d;
+    }
+
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+@code {
+    [SupplyParameterFromForm]
+    private LoginModel loginModel { get; set; } = new();
+    
+    private bool isLoading = false;
+    private bool showPassword = false;
+    private string errorMessage = string.Empty;
+    private bool isInitialized = false;
+    private bool isSessionChecked = false;
+    protected override async Task OnInitializedAsync()
+    {
+        // Đợi một chút để đảm bảo component đã render xong
+        await Task.Delay(100);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !isInitialized)
+        {
+            isInitialized = true;
+            
+            try
+            {
+                // Load user từ sessionStorage
+                await AuthService.LoadUserFromSessionStorageAsync(isPrerendering: false);
+                
+                // Nếu đã đăng nhập, chuyển hướng
+                if (AuthService.IsAuthenticated)
+                {
+                    Console.WriteLine("[DEBUG] User already logged in, redirecting...");
+                    Navigation.NavigateTo("/facilitythanhdts", false);
+                }
+                else
+                {
+                    Console.WriteLine("[DEBUG] No existing session found");
+                    StateHasChanged();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] OnAfterRenderAsync: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        Console.WriteLine($"[DEBUG] Login attempt: {loginModel.Username}");
+        
+        isLoading = true;
+        errorMessage = string.Empty;
+        StateHasChanged(); 
+        try
+        {
+            await Task.Delay(100);
+            
+            var success = await AuthService.LoginAsync(loginModel.Username, loginModel.Password);
+            
+            if (success)
+            {
+                Console.WriteLine("[DEBUG] Login successful");
+                
+                if (AuthStateProvider is CFB.BlazorWebApp.ThanhDT.Services.CustomAuthenticationStateProvider customProvider)
+                {
+                    customProvider.NotifyAuthenticationStateChangedManually();
+                }
+                
+                // Đợi một chút để state update
+                await Task.Delay(200);
+                
+                // Navigate với force reload
+                Navigation.NavigateTo("/facilitythanhdts", forceLoad: false);
+            }
+            else
+            {
+                Console.WriteLine("[DEBUG] Login failed - invalid credentials");
+                errorMessage = "Invalid username or password.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] Login exception: {ex.Message}");
+            errorMessage = "Login failed. Please check your credentials.";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+        StateHasChanged();
+    }
+
+    public class LoginModel
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+}

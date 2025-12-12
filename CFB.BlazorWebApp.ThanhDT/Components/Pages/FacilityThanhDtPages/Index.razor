@@ -1,0 +1,446 @@
+﻿@page "/facilitythanhdts"
+@using CFB.Services.ThanhDT
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using CFB.Entities.ThanhDT.Models
+@inject FacilityThanhDtService _facilityThanhDTService
+@attribute [Authorize]
+
+<PageTitle>Facility Management</PageTitle>
+
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">🏢 Facility Management</h1>
+            <p class="page-subtitle">Manage and search campus facilities</p>
+        </div>
+        <a href="facilitythanhdts/create" class="btn btn-success">
+            <span class="btn-icon">➕</span> Create New Facility
+        </a>
+    </div>
+
+    <!-- Search Form -->
+    <div class="search-container">
+        <div class="search-header">
+            <h3>🔍 Search Facilities</h3>
+        </div>
+        <div class="search-form">
+            <div class="form-group">
+                <label>📝 Facility Name</label>
+                <input type="text" @bind="searchFacilityName" class="form-control" placeholder="Search by name..." />
+            </div>
+            <div class="form-group">
+                <label>👥 Capacity</label>
+                <input type="number" @bind="searchCapacity" class="form-control" placeholder="Min capacity..." />
+            </div>
+            <div class="form-group">
+                <label>🏷️ Type Name</label>
+                <input type="text" @bind="searchTypeName" class="form-control" placeholder="Search by type..." />
+            </div>
+            <div class="form-group btn-group-container">
+                <button class="btn btn-primary" @onclick="SearchFacilities">
+                    <span class="btn-icon">🔎</span> Search
+                </button>
+                <button class="btn btn-secondary" @onclick="ClearSearch">
+                    <span class="btn-icon">🔄</span> Clear
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="table-container">
+        <QuickGrid Class="modern-table" Items="FacilityThanhDts" Pagination="pagination">
+            <PropertyColumn Property="facilitythanhdt => facilitythanhdt.FacilityName" Title="Facility Name" />
+            <PropertyColumn Property="facilitythanhdt => facilitythanhdt.FacilityTypeThanhDt.TypeName" Title="Type" />
+            <PropertyColumn Property="facilitythanhdt => facilitythanhdt.CampusThanhDt.Name" Title="Campus" />
+            <PropertyColumn Property="facilitythanhdt => facilitythanhdt.Capacity" Title="Capacity" />
+            <PropertyColumn Property="facilitythanhdt => facilitythanhdt.LocationDetail" Title="Location" />
+            <PropertyColumn Property="facilitythanhdt => facilitythanhdt.Description" Title="Description" />
+            <PropertyColumn Property="facilitythanhdt => facilitythanhdt.IsAvailable" Title="Available" />
+            <PropertyColumn Property="facilitythanhdt => facilitythanhdt.CreatedAt" Title="Created" Format="dd/MM/yyyy" />
+            <PropertyColumn Property="facilitythanhdt => facilitythanhdt.UpdatedAt" Title="Updated" Format="dd/MM/yyyy" />
+            <TemplateColumn Title="Actions" Context="facilitythanhdt">
+                <div class="action-buttons">
+                    <a href="@($"facilitythanhdts/edit?facilitythanhdtid={facilitythanhdt.FacilityThanhDtid}")" class="action-btn edit-btn" title="Edit">
+                        ✏️
+                    </a>
+                    <a href="@($"facilitythanhdts/details?facilitythanhdtid={facilitythanhdt.FacilityThanhDtid}")" class="action-btn detail-btn" title="Details">
+                        👁️
+                    </a>
+                    <a href="@($"facilitythanhdts/delete?facilitythanhdtid={facilitythanhdt.FacilityThanhDtid}")" class="action-btn delete-btn" title="Delete">
+                        🗑️
+                    </a>
+                </div>
+            </TemplateColumn>
+        </QuickGrid>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-controls">
+        <button class="pagination-btn" @onclick="async () => await PreviousPage()" disabled="@(!CanGoPrevious)">
+            ⬅️ Previous
+        </button>
+        <span class="page-info">
+            Page <strong>@(pagination.CurrentPageIndex + 1)</strong> of <strong>@TotalPages</strong>
+        </span>
+        <button class="pagination-btn" @onclick="async () => await NextPage()" disabled="@(!CanGoNext)">
+            Next ➡️
+        </button>
+    </div>
+</div>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 30px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 3px solid #e9ecef;
+    }
+
+    .page-title {
+        font-size: 32px;
+        color: #2c3e50;
+        margin: 0 0 5px 0;
+        font-weight: 700;
+    }
+
+    .page-subtitle {
+        color: #6c757d;
+        margin: 0;
+        font-size: 16px;
+    }
+
+    /* Search Container */
+    .search-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 25px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .search-header h3 {
+        color: white;
+        margin: 0 0 20px 0;
+        font-size: 22px;
+        font-weight: 600;
+    }
+
+    .search-form {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+        align-items: end;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .form-group label {
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: white;
+            font-size: 14px;
+        }
+
+    .form-control {
+        padding: 12px 15px;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #ffd700;
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
+            transform: translateY(-2px);
+        }
+
+    .btn-group-container {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-icon {
+        font-size: 16px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+        }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(245, 87, 108, 0.4);
+        }
+
+    .btn-success {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(79, 172, 254, 0.4);
+        }
+
+    /* Table Container */
+    .table-container {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+    }
+
+    .modern-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .modern-table :deep(thead) {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .modern-table :deep(th) {
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .modern-table :deep(td) {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+
+        .modern-table :deep(tbody tr) {
+            transition: all 0.3s ease;
+        }
+
+        .modern-table :deep(tbody tr:hover) {
+            background-color: #f8f9ff;
+            transform: scale(1.01);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+    }
+
+    .action-btn {
+        padding: 8px 12px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .edit-btn {
+        background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+    }
+
+        .edit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(253, 203, 110, 0.4);
+        }
+
+    .detail-btn {
+        background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+    }
+
+        .detail-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(9, 132, 227, 0.4);
+        }
+
+    .delete-btn {
+        background: linear-gradient(135deg, #ff7675 0%, #d63031 100%);
+    }
+
+        .delete-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(214, 48, 49, 0.4);
+        }
+
+    /* Pagination */
+    .pagination-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        padding: 20px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .pagination-btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+        .pagination-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .pagination-btn:disabled {
+            background: #e9ecef;
+            color: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.6;
+            box-shadow: none;
+        }
+
+    .page-info {
+        font-size: 16px;
+        color: #2c3e50;
+        padding: 0 20px;
+    }
+
+        .page-info strong {
+            color: #667eea;
+            font-size: 18px;
+        }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .page-header
+
+    {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .search-form {
+        grid-template-columns: 1fr;
+    }
+
+    .btn-group-container {
+        flex-direction: column;
+    }
+
+    .pagination-controls {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    }
+</style>
+
+@code {
+    private IQueryable<FacilityThanhDt>? FacilityThanhDts = default!;
+    private PaginationState pagination = new PaginationState { ItemsPerPage = 5 };
+    public int TotalPages;
+    bool CanGoNext => pagination.CurrentPageIndex < TotalPages - 1;
+    bool CanGoPrevious => pagination.CurrentPageIndex > 0;
+
+    private string searchFacilityName = string.Empty;
+    private int searchCapacity = 0;
+    private string searchTypeName = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        FacilityThanhDts = (await _facilityThanhDTService.GetAllAsync()).AsQueryable();
+        TotalPages = (int)Math.Ceiling((double)FacilityThanhDts.Count() / pagination.ItemsPerPage);
+    }
+
+    private async Task SearchFacilities()
+    {
+        var searchResults = await _facilityThanhDTService.SearchAsync(searchFacilityName, searchCapacity, searchTypeName);
+        FacilityThanhDts = searchResults.AsQueryable();
+        TotalPages = (int)Math.Ceiling((double)FacilityThanhDts.Count() / pagination.ItemsPerPage);
+        await pagination.SetCurrentPageIndexAsync(0);
+    }
+
+    private async Task ClearSearch()
+    {
+        searchFacilityName = string.Empty;
+        searchCapacity = 0;
+        searchTypeName = string.Empty;
+        await LoadData();
+        await pagination.SetCurrentPageIndexAsync(0);
+    }
+
+    async Task NextPage()
+    {
+        await pagination.SetCurrentPageIndexAsync(pagination.CurrentPageIndex + 1);
+    }
+
+    async Task PreviousPage()
+    {
+        if (pagination.CurrentPageIndex > 0)
+            await pagination.SetCurrentPageIndexAsync(pagination.CurrentPageIndex - 1);
+    }
+}
