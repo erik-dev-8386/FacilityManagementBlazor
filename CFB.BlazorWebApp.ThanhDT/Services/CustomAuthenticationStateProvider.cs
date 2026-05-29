@@ -31,8 +31,3 @@ namespace CFB.BlazorWebApp.ThanhDT.Services
         }
     }
 }
-// Hello
-// Xin chào
-// C#
-// CSharp
-// ThanhCuteHotMe
