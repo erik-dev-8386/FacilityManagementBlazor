@@ -1,0 +1,25 @@
+name: 🧹 C# Lint and Format Check
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛒 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0'
+
+      - name: 📦 Restore dependencies
+        run: dotnet restore
+
+      - name: 🔍 Check Code Format (Lint)
+        # Quét lỗi code style theo file .editorconfig
+        # Dùng || true nếu chỉ muốn cảnh báo, bỏ || true nếu muốn chặn cứng nút Merge khi code lỗi
+        run: |
+          echo "🔎 Running dotnet format check..."
+          dotnet format --verify-no-changes --verbosity normal || true
